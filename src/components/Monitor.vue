@@ -345,11 +345,14 @@ const rtVideoFrame = ref(null);
 const pbVideoFrame = ref(null);
 
 const payloadState = reactive({
-  token: props.payload.token || "",
   deviceId: props.payload.deviceId || "",
   chs: props.payload.chs || "",
   startTime: props.payload.startTime || "",
   endTime: props.payload.endTime || "",
+
+  serial: props.payload.serial || "",
+  vdotype: props.payload.vdotype || "",
+  token: props.payload.token || "",
 });
 
 const videoSrc = ref(
@@ -357,13 +360,21 @@ const videoSrc = ref(
 );
 
 const updateUrl = () => {
+  // https://fleetviews.mobileinnovation.asia/RealVideo?deviceId=31082500070&chs=1&token=7051e1d9b64d4b40b2e7bca6af1d1752
+  // ---------------- NEW ----------------- //
+  // https://fleetview/video?serial=123456&vdotype=live&token=abc
+  // https://fleetview/video?serial=123456&vdotype=playback&token=abc
+  // -------------------------------------- //
   const params = new URLSearchParams();
 
   if (payloadState.deviceId) params.set("deviceId", payloadState.deviceId);
   if (payloadState.chs) params.set("chs", payloadState.chs);
   if (payloadState.startTime) params.set("startTime", payloadState.startTime);
   if (payloadState.endTime) params.set("endTime", payloadState.endTime);
+
   if (payloadState.token) params.set("token", payloadState.token);
+  if (payloadState.serial) params.set("serial", payloadState.serial);
+  if (payloadState.vdotype) params.set("vdotype", payloadState.vdotype);
 
   const query = params.toString();
 
