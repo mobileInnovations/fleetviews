@@ -9,7 +9,7 @@
           :key="m.value"
           :variant="showMode === m.value ? 'tonal' : 'outlined'"
           size="small"
-          @click="showMode = m.value"
+          @click="switchMode(m.value)"
         >
           {{ m.label }}
         </v-btn>
@@ -44,8 +44,6 @@
           </div>
 
           <v-spacer />
-
-          <div class="text-token">Token: {{ payloadState.token }}</div>
         </div>
 
         <v-row>
@@ -314,13 +312,17 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 dayjs.extend(customParseFormat);
 
 const props = defineProps({
-  videoType: {
+  serial: {
     type: String,
     default: "",
   },
-  payload: {
-    type: Object,
-    default: () => ({}),
+  vdotype: {
+    type: String,
+    default: "live", // "live" | "playback"
+  },
+  token: {
+    type: String,
+    default: "",
   },
 });
 
@@ -345,14 +347,9 @@ const rtVideoFrame = ref(null);
 const pbVideoFrame = ref(null);
 
 const payloadState = reactive({
-  deviceId: props.payload.deviceId || "",
-  chs: props.payload.chs || "",
-  startTime: props.payload.startTime || "",
-  endTime: props.payload.endTime || "",
-
-  serial: props.payload.serial || "",
-  vdotype: props.payload.vdotype || "",
-  token: props.payload.token || "",
+  serial: props.serial || "",
+  vdotype: props.vdotype || "",
+  token: props.token || "",
 });
 
 const videoSrc = ref(
@@ -360,28 +357,15 @@ const videoSrc = ref(
 );
 
 const updateUrl = () => {
-  // https://fleetviews.mobileinnovation.asia/RealVideo?deviceId=31082500070&chs=1&token=7051e1d9b64d4b40b2e7bca6af1d1752
-  // ---------------- NEW ----------------- //
-  // https://fleetview/video?serial=123456&vdotype=live&token=abc
-  // https://fleetview/video?serial=123456&vdotype=playback&token=abc
-  // -------------------------------------- //
   const params = new URLSearchParams();
-
-  if (payloadState.deviceId) params.set("deviceId", payloadState.deviceId);
-  if (payloadState.chs) params.set("chs", payloadState.chs);
-  if (payloadState.startTime) params.set("startTime", payloadState.startTime);
-  if (payloadState.endTime) params.set("endTime", payloadState.endTime);
-
-  if (payloadState.token) params.set("token", payloadState.token);
   if (payloadState.serial) params.set("serial", payloadState.serial);
   if (payloadState.vdotype) params.set("vdotype", payloadState.vdotype);
+  if (payloadState.token) params.set("token", payloadState.token);
 
   const query = params.toString();
 
   const newUrl =
-    `${showMode.value}` +
-    `${query ? `?${query}` : ""}` +
-    `${window.location.hash}`;
+    "video" + `${query ? `?${query}` : ""}` + `${window.location.hash}`;
 
   console.log("Updating URL to:", newUrl);
 
@@ -411,9 +395,9 @@ const pbAction = (state) => {
 };
 
 const initialize = () => {
-  if (props.videoType === "RealVideo") {
+  if (props.vdotype === "live") {
     showMode.value = "RealVideo";
-  } else if (props.videoType === "Playback") {
+  } else if (props.vdotype === "playback") {
     showMode.value = "Playback";
   }
   updateUrl();
@@ -492,6 +476,27 @@ watch(
   },
   { deep: true },
 );
+
+const findDeviceCamera = async (serial) => {
+  try {
+    const response = await fetch(
+      `https://superhero.mobileinnovation.asia/vss/apiPage/getDeviceIdBySerial?serial=${serial}`,
+    );
+    const data = await response.json();
+    if (data && data.deviceId) {
+      payloadState.deviceId = data.deviceId;
+    } else {
+      console.error("Device ID not found for serial:", serial);
+    }
+  } catch (error) {
+    console.error("Error fetching device ID:", error);
+  }
+};
+
+const switchMode = (mode) => {
+  showMode.value = mode;
+  payloadState.vdotype = mode === "RealVideo" ? "live" : "playback";
+};
 
 onMounted(() => {
   initialize();
