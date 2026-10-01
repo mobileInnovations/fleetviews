@@ -14,6 +14,8 @@
           {{ m.label }}
         </v-btn>
       </div>
+      <v-spacer />
+      <div class="app-env">mode: {{ appEnv }}</div>
     </div>
     <!-- Panels -->
     <div class="panels">
@@ -308,10 +310,15 @@ import { ref, reactive, watch, onMounted } from "vue";
 import DateTimeComponent from "./input/DateTimeComponent.vue";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import { getDeviceCameraInfo } from "@/stores/api.js";
 
 dayjs.extend(customParseFormat);
 
 const props = defineProps({
+  appEnv: {
+    type: String,
+    default: "",
+  },
   serial: {
     type: String,
     default: "",
@@ -352,8 +359,15 @@ const payloadState = reactive({
   token: props.token || "",
 });
 
+const heroParams = reactive({
+  deviceId: "",
+  chs: "1",
+  startTime: dayjs().subtract(1, "hour").format("YYYYMMDDHHmmss"),
+  endTime: dayjs().format("YYYYMMDDHHmmss"),
+});
+
 const videoSrc = ref(
-  `https://superhero.mobileinnovation.asia/vss/apiPage/${showMode.value}.html?token=${payloadState.token}&deviceId=${payloadState.deviceId}&chs=${payloadState.chs}&stream=0&wnum=1&panel=1&buffer=2000`,
+  `https://superhero.mobileinnovation.asia/vss/apiPage/${showMode.value}.html?token=${heroParams.token}&deviceId=${heroParams.deviceId}&chs=${heroParams.chs}&stream=0&wnum=1&panel=1&buffer=2000`,
 );
 
 const updateUrl = () => {
@@ -366,8 +380,6 @@ const updateUrl = () => {
 
   const newUrl =
     "video" + `${query ? `?${query}` : ""}` + `${window.location.hash}`;
-
-  console.log("Updating URL to:", newUrl);
 
   window.history.replaceState(null, "", newUrl);
 };
@@ -401,6 +413,7 @@ const initialize = () => {
     showMode.value = "Playback";
   }
   updateUrl();
+  findDeviceCamera();
 };
 
 window.addEventListener("message", (event) => {
@@ -429,33 +442,31 @@ const fullscreenVideo = (frame) => {
 
 watch(
   [
-    () => payloadState.deviceId,
-    () => payloadState.chs,
-    () => payloadState.startTime,
-    () => payloadState.endTime,
-    () => payloadState.token,
+    () => heroParams.deviceId,
+    () => heroParams.chs,
+    () => heroParams.startTime,
+    () => heroParams.endTime,
+    () => heroParams.token,
     () => showMode.value,
     () => pbSpeed.value,
   ],
   () => {
-    console.log("payloadState changed", payloadState);
-
     updateUrl();
 
     if (showMode.value === "Playback") {
-      const st = dayjs(payloadState.startTime, "YYYYMMDDHHmmss").format(
+      const st = dayjs(heroParams.startTime, "YYYYMMDDHHmmss").format(
         "YYYYMMDDHHmmss",
       );
 
-      const et = dayjs(payloadState.endTime, "YYYYMMDDHHmmss").format(
+      const et = dayjs(heroParams.endTime, "YYYYMMDDHHmmss").format(
         "YYYYMMDDHHmmss",
       );
 
       videoSrc.value =
         `https://superhero.mobileinnovation.asia/vss/apiPage/ReplayVideo.html` +
-        `?token=${payloadState.token}` +
-        `&deviceId=${payloadState.deviceId}` +
-        `&chs=${payloadState.chs}` +
+        `?token=${heroParams.token}` +
+        `&deviceId=${heroParams.deviceId}` +
+        `&chs=${heroParams.chs}` +
         `&wnum=1` +
         `&panel=1` +
         `&buffer=2000` +
@@ -465,9 +476,9 @@ watch(
     } else {
       videoSrc.value =
         `https://superhero.mobileinnovation.asia/vss/apiPage/${showMode.value}.html` +
-        `?token=${payloadState.token}` +
-        `&deviceId=${payloadState.deviceId}` +
-        `&chs=${payloadState.chs}` +
+        `?token=${heroParams.token}` +
+        `&deviceId=${heroParams.deviceId}` +
+        `&chs=${heroParams.chs}` +
         `&stream=0` +
         `&wnum=1` +
         `&panel=1` +
@@ -477,17 +488,19 @@ watch(
   { deep: true },
 );
 
-const findDeviceCamera = async (serial) => {
+const findDeviceCamera = async () => {
   try {
-    const response = await fetch(
-      `https://superhero.mobileinnovation.asia/vss/apiPage/getDeviceIdBySerial?serial=${serial}`,
-    );
-    const data = await response.json();
-    if (data && data.deviceId) {
-      payloadState.deviceId = data.deviceId;
-    } else {
-      console.error("Device ID not found for serial:", serial);
-    }
+    await getDeviceCameraInfo(payloadState.serial, payloadState.token)
+      .then((data) => {
+        if (data && data.deviceId) {
+          heroParams.deviceId = data.deviceId;
+        } else {
+          console.error("Device ID not found for serial:", heroParams.serial);
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching device ID:", error);
+      });
   } catch (error) {
     console.error("Error fetching device ID:", error);
   }
@@ -504,6 +517,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.app-env {
+  font-size: 12px;
+  color: #64748b;
+}
+
 .root {
   display: flex;
   flex-direction: column;
