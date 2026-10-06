@@ -31,6 +31,7 @@
           />
         </div>
         <div class="d-flex align-center meta-row">
+          <span class="text-token">Token: {{ payloadState.token }}</span>
           <div class="link-wrap">
             <a
               v-if="videoSrc"
@@ -53,7 +54,7 @@
             <div class="field">
               <label>Device ID</label>
               <v-text-field
-                v-model="payloadState.deviceId"
+                v-model="heroParams.deviceId"
                 density="compact"
                 hide-details
                 variant="outlined"
@@ -64,7 +65,7 @@
             <div class="field">
               <label>Channel</label>
               <v-text-field
-                v-model="payloadState.chs"
+                v-model="heroParams.chs"
                 density="compact"
                 hide-details
                 variant="outlined"
@@ -177,7 +178,7 @@
             <div class="field">
               <label>Device ID</label>
               <v-text-field
-                v-model="payloadState.deviceId"
+                v-model="heroParams.deviceId"
                 density="compact"
                 hide-details
                 variant="outlined"
@@ -188,7 +189,7 @@
             <div class="field">
               <label>Channel</label>
               <v-text-field
-                v-model="payloadState.chs"
+                v-model="heroParams.chs"
                 density="compact"
                 hide-details
                 variant="outlined"
@@ -199,13 +200,13 @@
           <v-col cols="12" md="6">
             <div class="field">
               <label>Start time</label>
-              <DateTimeComponent v-model="payloadState.startTime" />
+              <DateTimeComponent v-model="heroParams.startTime" />
             </div>
           </v-col>
           <v-col cols="12" md="6">
             <div class="field">
               <label>End time</label>
-              <DateTimeComponent v-model="payloadState.endTime" />
+              <DateTimeComponent v-model="heroParams.endTime" />
             </div>
           </v-col>
         </v-row>
@@ -310,7 +311,13 @@ import { ref, reactive, watch, onMounted } from "vue";
 import DateTimeComponent from "./input/DateTimeComponent.vue";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-import { getDeviceCameraInfo } from "@/stores/api.js";
+import {
+  getDeviceCameraInfo,
+  getVideoSystemById,
+  genNewTokenFromHero,
+  updateNewToken,
+} from "@/stores/api.js";
+import AlertComponent from "@/components/AlertComponent.js";
 
 dayjs.extend(customParseFormat);
 
@@ -318,6 +325,10 @@ const props = defineProps({
   appEnv: {
     type: String,
     default: "",
+  },
+  ch: {
+    type: String,
+    default: "1",
   },
   serial: {
     type: String,
@@ -357,22 +368,24 @@ const payloadState = reactive({
   serial: props.serial || "",
   vdotype: props.vdotype || "",
   token: props.token || "",
+  ch: props.ch || "",
 });
 
 const heroParams = reactive({
-  deviceId: "",
-  chs: "1",
+  deviceId: props.serial || "",
+  chs: props.ch || "1",
   startTime: dayjs().subtract(1, "hour").format("YYYYMMDDHHmmss"),
   endTime: dayjs().format("YYYYMMDDHHmmss"),
 });
 
 const videoSrc = ref(
-  `https://superhero.mobileinnovation.asia/vss/apiPage/${showMode.value}.html?token=${heroParams.token}&deviceId=${heroParams.deviceId}&chs=${heroParams.chs}&stream=0&wnum=1&panel=1&buffer=2000`,
+  `https://superhero.mobileinnovation.asia/vss/apiPage/${showMode.value}.html?token=${payloadState.token}&deviceId=${heroParams.deviceId}&chs=${heroParams.chs}&stream=0&wnum=1&panel=1&buffer=2000`,
 );
 
 const updateUrl = () => {
   const params = new URLSearchParams();
-  if (payloadState.serial) params.set("serial", payloadState.serial);
+  if (heroParams.chs) params.set("ch", heroParams.chs);
+  if (heroParams.deviceId) params.set("serial", heroParams.deviceId);
   if (payloadState.vdotype) params.set("vdotype", payloadState.vdotype);
   if (payloadState.token) params.set("token", payloadState.token);
 
@@ -413,7 +426,7 @@ const initialize = () => {
     showMode.value = "Playback";
   }
   updateUrl();
-  findDeviceCamera();
+  fetchDeviceCameraInfo();
 };
 
 window.addEventListener("message", (event) => {
@@ -488,21 +501,68 @@ watch(
   { deep: true },
 );
 
-const findDeviceCamera = async () => {
+const fetchDeviceCameraInfo = async () => {
   try {
     await getDeviceCameraInfo(payloadState.serial, payloadState.token)
-      .then((data) => {
-        if (data && data.deviceId) {
-          heroParams.deviceId = data.deviceId;
+      .then(async (res) => {
+        if (res.success) {
+          heroParams.chs = res.data.VideoSystemId;
+          await fetchVideoSystemInfo(res.data.VideoSystemId);
         } else {
-          console.error("Device ID not found for serial:", heroParams.serial);
+          console.error(res.error || "Failed to fetch device camera info");
         }
       })
       .catch((error) => {
-        console.error("Error fetching device ID:", error);
+        console.error("Error fetching device camera info:", error);
       });
   } catch (error) {
-    console.error("Error fetching device ID:", error);
+    console.error("Error fetching device camera info:", error);
+  }
+};
+
+const fetchVideoSystemInfo = async (id) => {
+  try {
+    const { success, data } = await getVideoSystemById(id);
+    if (success) {
+      if (!data.ApiToken || data.ApiTokenExpire < Date.now()) {
+        const newToken = await genNewTokenAPI(data.Username, data.Password);
+        // Update the video system with the new token
+        await updateNewToken(id, newToken);
+      } else {
+        payloadState.token = data.ApiToken;
+        heroParams.token = data.ApiToken;
+      }
+    } else {
+      AlertComponent.error(
+        "Failed to fetch video system info",
+        data.error || "Unknown error",
+      );
+      console.error(data.error || "Failed to fetch video system info");
+    }
+    return { success, data };
+  } catch (error) {
+    console.error("Error fetching video system info:", error);
+    throw error;
+  }
+};
+
+const genNewTokenAPI = async (username, password) => {
+  // {status: 10000, msg: "Success", error: null, data: {token: "e9f23d1cd3ad45538db77ad3816e5988",…},…}
+
+  try {
+    const response = await genNewTokenFromHero(username, password);
+    console.log("New token response:", response);
+    if (response.success) {
+      return response.token || "";
+    } else {
+      AlertComponent.error(
+        "Failed to generate new API token",
+        response.message || "Unknown error",
+      );
+    }
+  } catch (error) {
+    console.error("Error generating new token:", error);
+    throw error;
   }
 };
 
@@ -720,6 +780,8 @@ onMounted(() => {
   }
 
   .text-token {
+    font-size: 8px;
+
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -744,7 +806,7 @@ onMounted(() => {
 }
 
 .text-token {
-  font-size: 12px;
+  font-size: 8px;
   color: #64748b;
 }
 </style>
