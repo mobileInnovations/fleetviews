@@ -87,8 +87,13 @@ export const genNewTokenFromHero = async (username, password) => {
 
 export const updateNewToken = async (videoSystemId, newToken) => {
   try {
+    const newTokenExpire = Date.now() + 24 * 60 * 60 * 1000; // Set token expiration to 24 hours from now
     const url = `${API_URL}/videoSystem/${videoSystemId}`;
-    const response = await axios.put(url, { ApiToken: newToken }, authHeader);
+    const response = await axios.put(
+      url,
+      { ApiToken: newToken, ApiTokenExpire: newTokenExpire },
+      authHeader,
+    );
     return response.data;
   } catch (error) {
     console.error("Failed to update new token:", error);

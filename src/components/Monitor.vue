@@ -523,6 +523,7 @@ const fetchDeviceCameraInfo = async () => {
 const fetchVideoSystemInfo = async (id) => {
   try {
     const { success, data } = await getVideoSystemById(id);
+    console.log("Video system info:", { success, data });
     if (success) {
       if (!data.ApiToken || data.ApiTokenExpire < Date.now()) {
         const newToken = await genNewTokenAPI(data.Username, data.Password);
