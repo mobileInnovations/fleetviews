@@ -22,10 +22,36 @@ export const queryGtOfDevice = async (deviceNo) => {
 
 export const getDeviceCameraInfo = async (SerialNo, Token) => {
   try {
+    if (!SerialNo || !Token) {
+      throw new Error(
+        "SerialNo and Token are required to get device camera info.",
+      );
+    }
     const url = `${API_URL}/deviceCamera`;
     const headers = {
       headers: {
         SerialNo,
+        Token,
+      },
+    };
+
+    const response = await axios.get(url, { ...headers, ...authHeader });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error querying device camera info:", error);
+    throw error;
+  }
+};
+
+export const checkToken = async (SerialNo, Token) => {
+  try {
+    if (!Token) {
+      throw new Error("Token is required to check token validity.");
+    }
+    const url = `${API_URL}/deviceCamera/checkToken`;
+    const headers = {
+      headers: {
         Token,
       },
     };
