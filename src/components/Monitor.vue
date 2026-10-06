@@ -376,10 +376,11 @@ const heroParams = reactive({
   chs: props.ch || "1",
   startTime: dayjs().subtract(1, "hour").format("YYYYMMDDHHmmss"),
   endTime: dayjs().format("YYYYMMDDHHmmss"),
+  apiToken: "",
 });
 
 const videoSrc = ref(
-  `https://superhero.mobileinnovation.asia/vss/apiPage/${showMode.value}.html?token=${payloadState.token}&deviceId=${heroParams.deviceId}&chs=${heroParams.chs}&stream=0&wnum=1&panel=1&buffer=2000`,
+  `https://superhero.mobileinnovation.asia/vss/apiPage/${showMode.value}.html?token=${heroParams.apiToken}&deviceId=${heroParams.deviceId}&chs=${heroParams.chs}&stream=0&wnum=1&panel=1&buffer=2000`,
 );
 
 const updateUrl = () => {
