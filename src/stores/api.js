@@ -58,10 +58,10 @@ export const checkToken = async (Token) => {
 
     const response = await axios.get(url, { ...headers, ...authHeader });
 
-    return response;
+    return response.data;
   } catch (error) {
     console.error("Error checking token:", error);
-    throw new Error("Failed to check token validity. Please try again later.");
+    throw error;
   }
 };
 
@@ -113,7 +113,7 @@ export const genNewTokenFromHero = async (username, password) => {
 
 export const updateNewToken = async (videoSystemId, newToken) => {
   try {
-    const newTokenExpire = Date.now() + 24 * 60 * 60 * 1000; // Set token expiration to 24 hours from now
+    const newTokenExpire = Date.now() + 48 * 60 * 60 * 1000; // Set token expiration to 48 hours from now
     const url = `${API_URL}/videoSystem/${videoSystemId}`;
     const response = await axios.put(
       url,

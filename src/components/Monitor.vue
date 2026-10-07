@@ -580,18 +580,17 @@ const verifyToken = async () => {
   }
 
   try {
-    const { success } = await checkToken(fleetviewState.token);
-    console.log("Token check result:", { success });
-    if (!success) {
-      AlertComponent.error(
-        "Token is invalid or expired.",
-        `Token: ${fleetviewState.token}`,
-      );
-    } else {
-      console.log("Token is valid.");
-    }
+    await checkToken(fleetviewState.token);
   } catch (error) {
+    if (error.response?.status === 404) {
+      const message = error.response?.data?.message || "Token not found";
+
+      AlertComponent.error("Invalid Token", `${message} [${fleetviewState.token}]`);
+      return;
+    }
+
     console.error("Error checking token:", error);
+    AlertComponent.error("Error", "Unable to verify token. Please try again.");
   }
 };
 
