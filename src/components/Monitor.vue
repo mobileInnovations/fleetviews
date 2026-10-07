@@ -31,7 +31,8 @@
           />
         </div>
         <div class="d-flex align-center meta-row">
-          <span class="text-token">Token: {{ fleetviewState.token }}</span>
+          <!-- <p class="text-token">Token: {{ fleetviewState.token }}</p>
+          <p class="text-token">API Token: {{ heroParams.apiToken }}</p> -->
           <div class="link-wrap">
             <a
               v-if="videoSrc"
@@ -166,7 +167,7 @@
             rel="noopener noreferrer"
             class="external-link"
           >
-            link video
+            Link Video
           </a>
 
           <span v-else> No video URL provided </span>
@@ -585,7 +586,10 @@ const verifyToken = async () => {
     if (error.response?.status === 404) {
       const message = error.response?.data?.message || "Token not found";
 
-      AlertComponent.error("Invalid Token", `${message} [${fleetviewState.token}]`);
+      AlertComponent.error(
+        "Invalid Token",
+        `${message} [${fleetviewState.token}]`,
+      );
       return;
     }
 
