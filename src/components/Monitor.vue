@@ -31,7 +31,7 @@
           />
         </div>
         <div class="d-flex align-center meta-row">
-          <span class="text-token">Token: {{ payloadState.token }}</span>
+          <span class="text-token">Token: {{ fleetviewState.token }}</span>
           <div class="link-wrap">
             <a
               v-if="videoSrc"
@@ -316,6 +316,7 @@ import {
   getVideoSystemById,
   genNewTokenFromHero,
   updateNewToken,
+  checkToken,
 } from "@/stores/api.js";
 import AlertComponent from "@/components/AlertComponent.js";
 
@@ -364,7 +365,7 @@ const pbSpeed = ref(1);
 const rtVideoFrame = ref(null);
 const pbVideoFrame = ref(null);
 
-const payloadState = reactive({
+const fleetviewState = reactive({
   serial: props.serial || "",
   vdotype: props.vdotype || "",
   token: props.token || "",
@@ -387,8 +388,8 @@ const updateUrl = () => {
   const params = new URLSearchParams();
   if (heroParams.chs) params.set("ch", heroParams.chs);
   if (heroParams.deviceId) params.set("serial", heroParams.deviceId);
-  if (payloadState.vdotype) params.set("vdotype", payloadState.vdotype);
-  if (payloadState.token) params.set("token", payloadState.token);
+  if (fleetviewState.vdotype) params.set("vdotype", fleetviewState.vdotype);
+  if (fleetviewState.token) params.set("token", fleetviewState.token);
 
   const query = params.toString();
 
@@ -504,7 +505,7 @@ watch(
 
 const fetchDeviceCameraInfo = async () => {
   try {
-    await getDeviceCameraInfo(payloadState.serial, payloadState.token)
+    await getDeviceCameraInfo(fleetviewState.serial, fleetviewState.token)
       .then(async (res) => {
         if (res.success) {
           heroParams.chs = res.data.VideoSystemId;
@@ -531,7 +532,6 @@ const fetchVideoSystemInfo = async (id) => {
         // Update the video system with the new token
         await updateNewToken(id, newToken);
       } else {
-        payloadState.token = data.ApiToken;
         heroParams.token = data.ApiToken;
       }
     } else {
@@ -570,10 +570,33 @@ const genNewTokenAPI = async (username, password) => {
 
 const switchMode = (mode) => {
   showMode.value = mode;
-  payloadState.vdotype = mode === "RealVideo" ? "live" : "playback";
+  fleetviewState.vdotype = mode === "RealVideo" ? "live" : "playback";
+};
+
+const verifyToken = async () => {
+  if (!fleetviewState.token) {
+    console.warn("No token available to check.");
+    return;
+  }
+
+  try {
+    const { success } = await checkToken(fleetviewState.token);
+    console.log("Token check result:", { success });
+    if (!success) {
+      AlertComponent.error(
+        "Token is invalid or expired.",
+        `Token: ${fleetviewState.token}`,
+      );
+    } else {
+      console.log("Token is valid.");
+    }
+  } catch (error) {
+    console.error("Error checking token:", error);
+  }
 };
 
 onMounted(() => {
+  verifyToken();
   initialize();
 });
 </script>

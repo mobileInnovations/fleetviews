@@ -44,7 +44,7 @@ export const getDeviceCameraInfo = async (SerialNo, Token) => {
   }
 };
 
-export const checkToken = async (SerialNo, Token) => {
+export const checkToken = async (Token) => {
   try {
     if (!Token) {
       throw new Error("Token is required to check token validity.");
@@ -58,10 +58,10 @@ export const checkToken = async (SerialNo, Token) => {
 
     const response = await axios.get(url, { ...headers, ...authHeader });
 
-    return response.data;
+    return response;
   } catch (error) {
-    console.error("Error querying device camera info:", error);
-    throw error;
+    console.error("Error checking token:", error);
+    throw new Error("Failed to check token validity. Please try again later.");
   }
 };
 
