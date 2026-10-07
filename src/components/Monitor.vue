@@ -433,7 +433,6 @@ const initialize = () => {
 };
 
 window.addEventListener("message", (event) => {
-  console.log("Received message from iframe:", event);
   if (event.data?.type === "STOP_VIDEO") {
     const video = document.querySelector("video");
 
@@ -526,7 +525,6 @@ const fetchDeviceCameraInfo = async () => {
 const fetchVideoSystemInfo = async (id) => {
   try {
     const { success, data } = await getVideoSystemById(id);
-    console.log("Video system info:", { success, data });
     if (success) {
       if (!data.ApiToken || data.ApiTokenExpire < Date.now()) {
         const newToken = await genNewTokenAPI(data.Username, data.Password);
