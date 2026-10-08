@@ -2,7 +2,7 @@
   "name": "fleetviews",
   "private": true,
   "type": "module",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "scripts": {
     "dev": "vite --open",
     "prod": "vite build --mode production",
