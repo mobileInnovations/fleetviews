@@ -522,27 +522,45 @@ const fetchDeviceCameraInfo = async () => {
   }
 };
 
+// Refresh a bit early so the token doesn't expire mid-request
+const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // 5 minutes
+
+const isTokenExpired = (token, expire) => {
+  if (!token || !expire) return true;
+  const expireMs = new Date(expire).getTime(); // handles ISO string, Date, or ms number
+  if (Number.isNaN(expireMs)) return true; // unparseable → treat as expired
+  return expireMs - TOKEN_REFRESH_BUFFER_MS <= Date.now();
+};
+
 const fetchVideoSystemInfo = async (id) => {
   try {
     const { success, data } = await getVideoSystemById(id);
-    if (success) {
-      if (!data.ApiToken || data.ApiTokenExpire < Date.now()) {
-        const newToken = await genNewTokenAPI(data.Username, data.Password);
-        // Update the video system with the new token
-        await updateNewToken(id, newToken);
-      } else {
-        heroParams.token = data.ApiToken;
-      }
-    } else {
-      AlertComponent.error(
-        "Failed to fetch video system info",
-        data.error || "Unknown error",
-      );
-      console.error(data.error || "Failed to fetch video system info");
+
+    if (!success) {
+      const message = data?.error || "Unknown error";
+      AlertComponent.error("Failed to fetch video system info", message);
+      console.error("Failed to fetch video system info:", message);
+      return { success, data };
     }
+
+    if (isTokenExpired(data.ApiToken, data.ApiTokenExpire)) {
+      const newToken = await genNewTokenAPI(data.Username, data.Password);
+      if (!newToken) throw new Error("Failed to generate new API token");
+
+      await updateNewToken(id, newToken);
+      heroParams.token = newToken; // was missing before
+      data.ApiToken = newToken; // keep returned data in sync
+    } else {
+      heroParams.token = data.ApiToken;
+    }
+
     return { success, data };
   } catch (error) {
     console.error("Error fetching video system info:", error);
+    AlertComponent.error(
+      "Video system error",
+      error.message || "Unknown error",
+    );
     throw error;
   }
 };
