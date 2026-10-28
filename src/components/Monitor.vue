@@ -25,6 +25,7 @@
         <div class="video-box">
           <iframe
             ref="rtVideoFrame"
+            @load="setFrameSound(rtVideoFrame, rtSound)"
             :src="videoSrc"
             frameborder="0"
             allow="autoplay; fullscreen"
@@ -121,7 +122,7 @@
               size="small"
               :aria-label="rtSound ? 'Sound on' : 'Sound off'"
               :title="rtSound ? 'Sound on' : 'Sound off'"
-              @click="rtSound = !rtSound"
+              @click="toggleRtSound"
             >
               <v-icon>{{
                 rtSound ? "mdi-volume-high" : "mdi-volume-off"
@@ -157,6 +158,7 @@
         <div class="video-box">
           <iframe
             ref="pbVideoFrame"
+            @load="setFrameSound(pbVideoFrame, pbSound)"
             :src="videoSrc"
             frameborder="0"
             allow="autoplay; fullscreen"
@@ -280,7 +282,7 @@
               size="small"
               :aria-label="pbSound ? 'Sound on' : 'Sound off'"
               :title="pbSound ? 'Sound on' : 'Sound off'"
-              @click="pbSound = !pbSound"
+              @click="togglePbSound"
             >
               <v-icon>{{
                 pbSound ? "mdi-volume-high" : "mdi-volume-off"
@@ -436,6 +438,35 @@ const pbAction = (state) => {
     { type: RT_MESSAGE_TYPE[state] },
     "*",
   );
+};
+
+const setFrameSound = (frame, on) => {
+  const el = frame?.value ?? frame;
+  if (!el) return;
+
+  el.contentWindow?.postMessage(
+    { type: on ? "UNMUTE_VIDEO" : "MUTE_VIDEO" },
+    "*",
+  );
+
+  // Same-origin iframe: mute the <video> elements directly
+  try {
+    el.contentDocument?.querySelectorAll("video").forEach((video) => {
+      video.muted = !on;
+    });
+  } catch {
+    // Cross-origin iframe, rely on postMessage
+  }
+};
+
+const toggleRtSound = () => {
+  rtSound.value = !rtSound.value;
+  setFrameSound(rtVideoFrame, rtSound.value);
+};
+
+const togglePbSound = () => {
+  pbSound.value = !pbSound.value;
+  setFrameSound(pbVideoFrame, pbSound.value);
 };
 
 const initialize = () => {
