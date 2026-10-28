@@ -344,7 +344,13 @@ const props = defineProps({
     type: String,
     default: "",
   },
+  active: {
+    type: Boolean,
+    default: true, // only the active tab writes to the browser URL
+  },
 });
+
+const emit = defineEmits(["update-title"]);
 
 const modes = [
   { label: "Real time", value: "RealVideo" },
@@ -386,6 +392,8 @@ const videoSrc = ref(
 );
 
 const updateUrl = () => {
+  if (!props.active) return;
+
   const params = new URLSearchParams();
   if (heroParams.chs) params.set("ch", heroParams.chs);
   if (heroParams.deviceId) params.set("serial", heroParams.deviceId);
@@ -501,6 +509,22 @@ watch(
     }
   },
   { deep: true },
+);
+
+watch(
+  () => props.active,
+  (active) => {
+    if (active) updateUrl();
+  },
+);
+
+watch(
+  [() => heroParams.deviceId, () => showMode.value],
+  () => {
+    const modeLabel = modes.find((m) => m.value === showMode.value)?.label;
+    emit("update-title", `${heroParams.deviceId || "-"} · ${modeLabel}`);
+  },
+  { immediate: true },
 );
 
 const fetchDeviceCameraInfo = async () => {
@@ -631,7 +655,7 @@ onMounted(() => {
   flex-direction: column;
   gap: 8px;
   padding: 8px;
-  height: 100vh;
+  height: 100%;
   overflow: hidden; /* was implicit; now enforced */
   font-family: Arial, sans-serif;
   box-sizing: border-box;
@@ -790,7 +814,7 @@ onMounted(() => {
 @media (max-width: 960px) {
   .root {
     height: auto;
-    min-height: 100vh;
+    min-height: 100%;
   }
 
   .panels {
