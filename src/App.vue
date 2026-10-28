@@ -180,6 +180,8 @@ const closeTab = (id) => {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 /* ── Chrome-style tab strip ─────────────────────────────────────────────── */
@@ -339,11 +341,13 @@ const closeTab = (id) => {
 .tab-pane {
   height: 100%;
 }
+</style>
 
-@media (max-width: 960px) {
-  .app-shell {
-    height: auto;
-    min-height: 100vh;
-  }
+<style>
+/* Lock the page to the viewport; content fits instead of scrolling */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
 }
 </style>

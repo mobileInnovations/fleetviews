@@ -827,7 +827,9 @@ onMounted(() => {
   max-width: 1400px;
   margin: 0 auto;
   display: grid;
+  width: 100%;
   grid-template-columns: 1fr;
+  grid-auto-rows: minmax(0, 1fr);
   gap: 8px;
   flex: 1;
   min-height: 0;
@@ -841,7 +843,15 @@ onMounted(() => {
   padding: 10px;
   min-width: 0;
   min-height: 0; /* lets flex children shrink instead of overflowing */
-  overflow-y: auto; /* was overflow: hidden */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+/* Controls keep their natural height; the video takes the rest */
+.panel > * {
+  flex: 0 0 auto;
 }
 
 .panel h2 {
@@ -852,10 +862,14 @@ onMounted(() => {
   margin: 0;
 }
 
-/* ── Video (16:9 landscape) ───────────────────────────── */
+/* ── Video (fills remaining panel height) ─────────────── */
+.panel > .video-box {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .video-box {
   width: 100%;
-  aspect-ratio: 16 / 9;
   background: #000;
   overflow: hidden;
   position: relative;
@@ -942,11 +956,6 @@ onMounted(() => {
 
 /* Tablet: stack panels */
 @media (max-width: 960px) {
-  .root {
-    height: auto;
-    min-height: 100%;
-  }
-
   .panels {
     grid-template-columns: 1fr;
   }
