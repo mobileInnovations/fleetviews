@@ -28,6 +28,7 @@
             :src="videoSrc"
             frameborder="0"
             allow="autoplay; fullscreen"
+            allowfullscreen
           />
         </div>
         <div class="d-flex align-center meta-row">
@@ -132,6 +133,7 @@
               variant="outlined"
               aria-label="Screenshot"
               title="Screenshot"
+              @click="screenshotVideo(rtVideoFrame)"
             >
               <v-icon>mdi-camera</v-icon>
             </v-btn>
@@ -158,6 +160,7 @@
             :src="videoSrc"
             frameborder="0"
             allow="autoplay; fullscreen"
+            allowfullscreen
           />
         </div>
         <div class="meta-row">
@@ -289,6 +292,7 @@
               variant="outlined"
               aria-label="Screenshot"
               title="Screenshot"
+              @click="screenshotVideo(pbVideoFrame)"
             >
               <v-icon>mdi-camera</v-icon>
             </v-btn>
@@ -455,8 +459,85 @@ window.addEventListener("message", (event) => {
   }
 });
 
+const downloadCanvas = (canvas) => {
+  const link = document.createElement("a");
+  link.download = `screenshot_${heroParams.deviceId}_${dayjs().format("YYYYMMDD_HHmmss")}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+};
+
+const screenshotVideo = async (frame) => {
+  // Template passes the unwrapped element; script callers may pass the ref
+  const el = frame?.value ?? frame;
+  if (!el) return;
+
+  // Same-origin iframe: draw the <video> element directly
+  try {
+    const video = el.contentDocument?.querySelector("video");
+    if (video && video.videoWidth) {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d").drawImage(video, 0, 0);
+      downloadCanvas(canvas);
+      return;
+    }
+  } catch {
+    // Cross-origin iframe, fall back to tab capture
+  }
+
+  // Cross-origin iframe: capture the current tab and crop to the iframe area
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { displaySurface: "browser" },
+      audio: false,
+      preferCurrentTab: true,
+    });
+
+    const track = stream.getVideoTracks()[0];
+    const capture = document.createElement("video");
+    capture.srcObject = stream;
+    capture.muted = true;
+    await capture.play();
+    // Wait a frame so the permission prompt is gone from the capture
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const rect = el.getBoundingClientRect();
+    const scaleX = capture.videoWidth / window.innerWidth;
+    const scaleY = capture.videoHeight / window.innerHeight;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(rect.width * scaleX);
+    canvas.height = Math.round(rect.height * scaleY);
+    canvas
+      .getContext("2d")
+      .drawImage(
+        capture,
+        rect.left * scaleX,
+        rect.top * scaleY,
+        rect.width * scaleX,
+        rect.height * scaleY,
+        0,
+        0,
+        canvas.width,
+        canvas.height,
+      );
+
+    track.stop();
+    downloadCanvas(canvas);
+  } catch (error) {
+    const message = error?.message || String(error);
+    AlertComponent.error("Failed to capture screenshot", message);
+    console.error("Failed to capture screenshot:", message);
+  } finally {
+    stream?.getTracks().forEach((t) => t.stop());
+  }
+};
+
 const fullscreenVideo = (frame) => {
-  const el = frame?.value;
+  // Template passes the unwrapped element; script callers may pass the ref
+  const el = frame?.value ?? frame;
   if (!el) return;
 
   if (el.requestFullscreen) {
