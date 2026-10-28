@@ -22,301 +22,307 @@
       <!-- Real Time Panel -->
       <div v-if="showMode !== 'Playback'" class="panel">
         <h2>Real time</h2>
-        <div class="video-box">
-          <iframe
-            ref="rtVideoFrame"
-            @load="setFrameSound(rtVideoFrame, rtSound)"
-            :src="videoSrc"
-            frameborder="0"
-            allow="autoplay; fullscreen"
-            allowfullscreen
-          />
-        </div>
-        <div class="d-flex align-center meta-row">
-          <!-- <p class="text-token">Token: {{ fleetviewState.token }}</p>
-          <p class="text-token">API Token: {{ heroParams.apiToken }}</p> -->
-          <div class="link-wrap">
-            <a
-              v-if="videoSrc"
-              :href="videoSrc"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="external-link"
-            >
-              Link Video
-            </a>
-
-            <span v-else>No video URL provided</span>
+        <div ref="rtBody" :class="['panel-body', { side: rtSide }]">
+          <div class="video-box">
+            <iframe
+              ref="rtVideoFrame"
+              @load="setFrameSound(rtVideoFrame, rtSound)"
+              :src="videoSrc"
+              frameborder="0"
+              allow="autoplay; fullscreen"
+              allowfullscreen
+            />
           </div>
+          <div ref="rtControls" class="panel-controls">
+            <div class="d-flex align-center meta-row">
+              <div class="link-wrap">
+                <a
+                  v-if="videoSrc"
+                  :href="videoSrc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="external-link"
+                >
+                  Link Video
+                </a>
 
-          <v-spacer />
+                <span v-else>No video URL provided</span>
+              </div>
+
+              <v-spacer />
+            </div>
+
+            <v-row>
+              <v-col cols="12" md="6">
+                <div class="field">
+                  <label>Device ID</label>
+                  <v-text-field
+                    v-model="heroParams.deviceId"
+                    density="compact"
+                    hide-details="auto"
+                    :error-messages="deviceError"
+                    variant="outlined"
+                  />
+                </div>
+              </v-col>
+              <v-col cols="12" md="6">
+                <div class="field">
+                  <label>Channel</label>
+                  <v-text-field
+                    v-model="heroParams.chs"
+                    density="compact"
+                    hide-details
+                    variant="outlined"
+                  />
+                </div>
+              </v-col>
+            </v-row>
+            <v-row>
+              <div class="btns">
+                <v-btn
+                  :color="rtState === 'play' ? 'primary' : undefined"
+                  :variant="rtState === 'play' ? 'tonal' : 'outlined'"
+                  icon
+                  size="small"
+                  aria-label="Play"
+                  title="Play"
+                  @click="rtAction('play')"
+                >
+                  <v-icon>mdi-play</v-icon>
+                </v-btn>
+                <v-btn
+                  :color="rtState === 'pause' ? 'primary' : undefined"
+                  :variant="rtState === 'pause' ? 'tonal' : 'outlined'"
+                  icon
+                  size="small"
+                  aria-label="Pause"
+                  title="Pause"
+                  @click="rtAction('pause')"
+                >
+                  <v-icon>mdi-pause</v-icon>
+                </v-btn>
+                <v-btn
+                  :color="rtState === 'stop' ? 'error' : undefined"
+                  :variant="rtState === 'stop' ? 'tonal' : 'outlined'"
+                  icon
+                  size="small"
+                  aria-label="Stop"
+                  title="Stop"
+                  @click="rtAction('stop')"
+                >
+                  <v-icon>mdi-stop</v-icon>
+                </v-btn>
+
+                <v-divider vertical class="mx-1 divider" />
+
+                <v-btn
+                  :color="rtSound ? 'primary' : undefined"
+                  :variant="rtSound ? 'tonal' : 'outlined'"
+                  icon
+                  size="small"
+                  :aria-label="rtSound ? 'Sound on' : 'Sound off'"
+                  :title="rtSound ? 'Sound on' : 'Sound off'"
+                  @click="toggleRtSound"
+                >
+                  <v-icon>{{
+                    rtSound ? "mdi-volume-high" : "mdi-volume-off"
+                  }}</v-icon>
+                </v-btn>
+                <v-btn
+                  icon
+                  size="small"
+                  variant="outlined"
+                  aria-label="Screenshot"
+                  title="Screenshot"
+                  @click="screenshotVideo(rtVideoFrame)"
+                >
+                  <v-icon>mdi-camera</v-icon>
+                </v-btn>
+                <v-btn
+                  icon
+                  size="small"
+                  variant="outlined"
+                  aria-label="Fullscreen"
+                  title="Fullscreen"
+                  @click="fullscreenVideo(rtVideoFrame)"
+                >
+                  <v-icon>mdi-fullscreen</v-icon>
+                </v-btn>
+              </div></v-row
+            >
+          </div>
         </div>
-
-        <v-row>
-          <v-col cols="12" md="6">
-            <div class="field">
-              <label>Device ID</label>
-              <v-text-field
-                v-model="heroParams.deviceId"
-                density="compact"
-                hide-details="auto"
-                :error-messages="deviceError"
-                variant="outlined"
-              />
-            </div>
-          </v-col>
-          <v-col cols="12" md="6">
-            <div class="field">
-              <label>Channel</label>
-              <v-text-field
-                v-model="heroParams.chs"
-                density="compact"
-                hide-details
-                variant="outlined"
-              />
-            </div>
-          </v-col>
-        </v-row>
-        <v-row>
-          <div class="btns">
-            <v-btn
-              :color="rtState === 'play' ? 'primary' : undefined"
-              :variant="rtState === 'play' ? 'tonal' : 'outlined'"
-              icon
-              size="small"
-              aria-label="Play"
-              title="Play"
-              @click="rtAction('play')"
-            >
-              <v-icon>mdi-play</v-icon>
-            </v-btn>
-            <v-btn
-              :color="rtState === 'pause' ? 'primary' : undefined"
-              :variant="rtState === 'pause' ? 'tonal' : 'outlined'"
-              icon
-              size="small"
-              aria-label="Pause"
-              title="Pause"
-              @click="rtAction('pause')"
-            >
-              <v-icon>mdi-pause</v-icon>
-            </v-btn>
-            <v-btn
-              :color="rtState === 'stop' ? 'error' : undefined"
-              :variant="rtState === 'stop' ? 'tonal' : 'outlined'"
-              icon
-              size="small"
-              aria-label="Stop"
-              title="Stop"
-              @click="rtAction('stop')"
-            >
-              <v-icon>mdi-stop</v-icon>
-            </v-btn>
-
-            <v-divider vertical class="mx-1 divider" />
-
-            <v-btn
-              :color="rtSound ? 'primary' : undefined"
-              :variant="rtSound ? 'tonal' : 'outlined'"
-              icon
-              size="small"
-              :aria-label="rtSound ? 'Sound on' : 'Sound off'"
-              :title="rtSound ? 'Sound on' : 'Sound off'"
-              @click="toggleRtSound"
-            >
-              <v-icon>{{
-                rtSound ? "mdi-volume-high" : "mdi-volume-off"
-              }}</v-icon>
-            </v-btn>
-            <v-btn
-              icon
-              size="small"
-              variant="outlined"
-              aria-label="Screenshot"
-              title="Screenshot"
-              @click="screenshotVideo(rtVideoFrame)"
-            >
-              <v-icon>mdi-camera</v-icon>
-            </v-btn>
-            <v-btn
-              icon
-              size="small"
-              variant="outlined"
-              aria-label="Fullscreen"
-              title="Fullscreen"
-              @click="fullscreenVideo(rtVideoFrame)"
-            >
-              <v-icon>mdi-fullscreen</v-icon>
-            </v-btn>
-          </div></v-row
-        >
       </div>
 
       <!-- Playback Panel -->
       <div v-if="showMode !== 'RealVideo'" class="panel">
         <h2>Playback</h2>
-        <div class="video-box">
-          <iframe
-            ref="pbVideoFrame"
-            @load="setFrameSound(pbVideoFrame, pbSound)"
-            :src="videoSrc"
-            frameborder="0"
-            allow="autoplay; fullscreen"
-            allowfullscreen
-          />
-        </div>
-        <div class="meta-row">
-          <a
-            v-if="videoSrc"
-            :href="videoSrc"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="external-link"
-          >
-            Link Video
-          </a>
-
-          <span v-else> No video URL provided </span>
-        </div>
-
-        <!-- Info Control -->
-        <v-row>
-          <v-col cols="12" md="6">
-            <div class="field">
-              <label>Device ID</label>
-              <v-text-field
-                v-model="heroParams.deviceId"
-                density="compact"
-                hide-details="auto"
-                :error-messages="deviceError"
-                variant="outlined"
-              />
-            </div>
-          </v-col>
-          <v-col cols="12" md="6">
-            <div class="field">
-              <label>Channel</label>
-              <v-text-field
-                v-model="heroParams.chs"
-                density="compact"
-                hide-details
-                variant="outlined"
-              />
-            </div>
-          </v-col>
-
-          <v-col cols="12" md="6">
-            <div class="field">
-              <label>Start time</label>
-              <DateTimeComponent v-model="heroParams.startTime" />
-            </div>
-          </v-col>
-          <v-col cols="12" md="6">
-            <div class="field">
-              <label>End time</label>
-              <DateTimeComponent v-model="heroParams.endTime" />
-            </div>
-          </v-col>
-        </v-row>
-
-        <!-- Buttons Controls -->
-        <v-row>
-          <div class="btns">
-            <v-btn
-              :color="pbState === 'play' ? 'primary' : undefined"
-              :variant="pbState === 'play' ? 'tonal' : 'outlined'"
-              icon
-              size="small"
-              aria-label="Playback"
-              title="Playback"
-              @click="pbAction('play')"
-            >
-              <v-icon>mdi-play</v-icon>
-            </v-btn>
-            <v-btn
-              :color="pbState === 'pause' ? 'primary' : undefined"
-              :variant="pbState === 'pause' ? 'tonal' : 'outlined'"
-              icon
-              size="small"
-              aria-label="Pause"
-              title="Pause"
-              @click="pbAction('pause')"
-            >
-              <v-icon>mdi-pause</v-icon>
-            </v-btn>
-            <v-btn
-              :color="pbState === 'stop' ? 'error' : undefined"
-              :variant="pbState === 'stop' ? 'tonal' : 'outlined'"
-              icon
-              size="small"
-              aria-label="Stop"
-              title="Stop"
-              @click="pbAction('stop')"
-            >
-              <v-icon>mdi-stop</v-icon>
-            </v-btn>
-
-            <v-divider vertical class="mx-1 divider" />
-
-            <div class="speed-group">
-              <v-btn
-                v-for="s in speeds"
-                :key="s"
-                :color="pbSpeed === s ? 'primary' : undefined"
-                :variant="pbSpeed === s ? 'tonal' : 'outlined'"
-                size="small"
-                :aria-label="`Speed ×${s}`"
-                :title="`×${s}`"
-                @click="pbSpeed = s"
-              >
-                ×{{ s }}
-              </v-btn>
-            </div>
-
-            <v-divider vertical class="mx-1 divider" />
-
-            <v-btn
-              :color="pbSound ? 'primary' : undefined"
-              :variant="pbSound ? 'tonal' : 'outlined'"
-              icon
-              size="small"
-              :aria-label="pbSound ? 'Sound on' : 'Sound off'"
-              :title="pbSound ? 'Sound on' : 'Sound off'"
-              @click="togglePbSound"
-            >
-              <v-icon>{{
-                pbSound ? "mdi-volume-high" : "mdi-volume-off"
-              }}</v-icon>
-            </v-btn>
-            <v-btn
-              icon
-              size="small"
-              variant="outlined"
-              aria-label="Screenshot"
-              title="Screenshot"
-              @click="screenshotVideo(pbVideoFrame)"
-            >
-              <v-icon>mdi-camera</v-icon>
-            </v-btn>
-            <v-btn
-              icon
-              size="small"
-              variant="outlined"
-              aria-label="Fullscreen"
-              title="Fullscreen"
-              @click="fullscreenVideo(pbVideoFrame)"
-            >
-              <v-icon>mdi-fullscreen</v-icon>
-            </v-btn>
+        <div ref="pbBody" :class="['panel-body', { side: pbSide }]">
+          <div class="video-box">
+            <iframe
+              ref="pbVideoFrame"
+              @load="setFrameSound(pbVideoFrame, pbSound)"
+              :src="videoSrc"
+              frameborder="0"
+              allow="autoplay; fullscreen"
+              allowfullscreen
+            />
           </div>
-        </v-row>
+          <div ref="pbControls" class="panel-controls">
+            <div class="meta-row">
+              <a
+                v-if="videoSrc"
+                :href="videoSrc"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="external-link"
+              >
+                Link Video
+              </a>
+
+              <span v-else> No video URL provided </span>
+            </div>
+
+            <!-- Info Control -->
+            <v-row>
+              <v-col cols="12" md="6">
+                <div class="field">
+                  <label>Device ID</label>
+                  <v-text-field
+                    v-model="heroParams.deviceId"
+                    density="compact"
+                    hide-details="auto"
+                    :error-messages="deviceError"
+                    variant="outlined"
+                  />
+                </div>
+              </v-col>
+              <v-col cols="12" md="6">
+                <div class="field">
+                  <label>Channel</label>
+                  <v-text-field
+                    v-model="heroParams.chs"
+                    density="compact"
+                    hide-details
+                    variant="outlined"
+                  />
+                </div>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <div class="field">
+                  <label>Start time</label>
+                  <DateTimeComponent v-model="heroParams.startTime" />
+                </div>
+              </v-col>
+              <v-col cols="12" md="6">
+                <div class="field">
+                  <label>End time</label>
+                  <DateTimeComponent v-model="heroParams.endTime" />
+                </div>
+              </v-col>
+            </v-row>
+
+            <!-- Buttons Controls -->
+            <v-row>
+              <div class="btns">
+                <v-btn
+                  :color="pbState === 'play' ? 'primary' : undefined"
+                  :variant="pbState === 'play' ? 'tonal' : 'outlined'"
+                  icon
+                  size="small"
+                  aria-label="Playback"
+                  title="Playback"
+                  @click="pbAction('play')"
+                >
+                  <v-icon>mdi-play</v-icon>
+                </v-btn>
+                <v-btn
+                  :color="pbState === 'pause' ? 'primary' : undefined"
+                  :variant="pbState === 'pause' ? 'tonal' : 'outlined'"
+                  icon
+                  size="small"
+                  aria-label="Pause"
+                  title="Pause"
+                  @click="pbAction('pause')"
+                >
+                  <v-icon>mdi-pause</v-icon>
+                </v-btn>
+                <v-btn
+                  :color="pbState === 'stop' ? 'error' : undefined"
+                  :variant="pbState === 'stop' ? 'tonal' : 'outlined'"
+                  icon
+                  size="small"
+                  aria-label="Stop"
+                  title="Stop"
+                  @click="pbAction('stop')"
+                >
+                  <v-icon>mdi-stop</v-icon>
+                </v-btn>
+
+                <v-divider vertical class="mx-1 divider" />
+
+                <div class="speed-group">
+                  <v-btn
+                    v-for="s in speeds"
+                    :key="s"
+                    :color="pbSpeed === s ? 'primary' : undefined"
+                    :variant="pbSpeed === s ? 'tonal' : 'outlined'"
+                    size="small"
+                    :aria-label="`Speed ×${s}`"
+                    :title="`×${s}`"
+                    @click="pbSpeed = s"
+                  >
+                    ×{{ s }}
+                  </v-btn>
+                </div>
+
+                <v-divider vertical class="mx-1 divider" />
+
+                <v-btn
+                  :color="pbSound ? 'primary' : undefined"
+                  :variant="pbSound ? 'tonal' : 'outlined'"
+                  icon
+                  size="small"
+                  :aria-label="pbSound ? 'Sound on' : 'Sound off'"
+                  :title="pbSound ? 'Sound on' : 'Sound off'"
+                  @click="togglePbSound"
+                >
+                  <v-icon>{{
+                    pbSound ? "mdi-volume-high" : "mdi-volume-off"
+                  }}</v-icon>
+                </v-btn>
+                <v-btn
+                  icon
+                  size="small"
+                  variant="outlined"
+                  aria-label="Screenshot"
+                  title="Screenshot"
+                  @click="screenshotVideo(pbVideoFrame)"
+                >
+                  <v-icon>mdi-camera</v-icon>
+                </v-btn>
+                <v-btn
+                  icon
+                  size="small"
+                  variant="outlined"
+                  aria-label="Fullscreen"
+                  title="Fullscreen"
+                  @click="fullscreenVideo(pbVideoFrame)"
+                >
+                  <v-icon>mdi-fullscreen</v-icon>
+                </v-btn>
+              </div>
+            </v-row>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted } from "vue";
+import { ref, reactive, watch, onMounted, onBeforeUnmount } from "vue";
 import DateTimeComponent from "./input/DateTimeComponent.vue";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
@@ -379,6 +385,52 @@ const pbSpeed = ref(1);
 
 const rtVideoFrame = ref(null);
 const pbVideoFrame = ref(null);
+
+// ── Side layout: move controls right of the video when it gets < 50% height ──
+const rtBody = ref(null);
+const rtControls = ref(null);
+const rtSide = ref(false);
+const pbBody = ref(null);
+const pbControls = ref(null);
+const pbSide = ref(false);
+
+const PANEL_GAP = 8;
+
+const watchPanelLayout = (bodyRef, controlsRef, sideRef) => {
+  let stackedControlsHeight = 0;
+
+  const update = () => {
+    const body = bodyRef.value;
+    const controls = controlsRef.value;
+    // Hidden tab (v-show) reports 0 — keep the current layout
+    if (!body || !controls || !body.clientHeight) return;
+
+    // Only measure while stacked; side layout changes the controls' height
+    if (!sideRef.value) stackedControlsHeight = controls.offsetHeight;
+
+    const videoHeight = body.clientHeight - stackedControlsHeight - PANEL_GAP;
+    sideRef.value = videoHeight < body.clientHeight * 0.5;
+  };
+
+  const observer = new ResizeObserver(update);
+
+  watch(
+    [bodyRef, controlsRef],
+    ([body, controls], _, onCleanup) => {
+      if (!body || !controls) return;
+      sideRef.value = false;
+      observer.observe(body);
+      observer.observe(controls);
+      onCleanup(() => observer.disconnect());
+    },
+    { immediate: true, flush: "post" },
+  );
+
+  onBeforeUnmount(() => observer.disconnect());
+};
+
+watchPanelLayout(rtBody, rtControls, rtSide);
+watchPanelLayout(pbBody, pbControls, pbSide);
 
 const fleetviewState = reactive({
   serial: props.serial || "",
@@ -653,7 +705,10 @@ watch(
 const fetchDeviceCameraInfo = async () => {
   let res;
   try {
-    res = await getDeviceCameraInfo(fleetviewState.serial, fleetviewState.token);
+    res = await getDeviceCameraInfo(
+      fleetviewState.serial,
+      fleetviewState.token,
+    );
   } catch (error) {
     const message =
       error.response?.data?.message || error.message || "Unknown error";
@@ -862,9 +917,46 @@ onMounted(() => {
   margin: 0;
 }
 
-/* ── Video (fills remaining panel height) ─────────────── */
-.panel > .video-box {
+/* ── Panel body: video + controls ─────────────────────── */
+.panel > .panel-body {
   flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-controls {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-controls > * {
+  flex: 0 0 auto;
+}
+
+/* Video too short → controls move to the right of the video */
+.panel-body.side {
+  flex-direction: row;
+}
+
+.panel-body.side .panel-controls {
+  width: 50%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.panel-body.side .panel-controls :deep(.v-col) {
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+
+/* ── Video (fills remaining panel height) ─────────────── */
+.panel-body > .video-box {
+  flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
 }
 
