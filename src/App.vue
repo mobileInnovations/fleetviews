@@ -303,7 +303,9 @@ const closeTab = (id) => {
   flex-shrink: 0;
   width: 20px;
   height: 20px;
+  border: none;
   border-radius: 50%;
+  background: transparent;
   color: inherit;
 }
 
@@ -319,7 +321,9 @@ const closeTab = (id) => {
   width: 28px;
   height: 28px;
   margin: 0 0 4px 6px;
+  border: none;
   border-radius: 50%;
+  background: transparent;
   color: rgba(var(--v-theme-on-surface), 0.8);
 }
 
