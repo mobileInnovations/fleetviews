@@ -50,7 +50,7 @@
             <v-card-text>
               <v-text-field
                 v-model="newSerial"
-                label="Serial No"
+                label="Device ID (serial)"
                 density="compact"
                 variant="outlined"
                 autofocus

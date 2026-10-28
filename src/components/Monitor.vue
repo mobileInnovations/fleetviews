@@ -57,7 +57,8 @@
               <v-text-field
                 v-model="heroParams.deviceId"
                 density="compact"
-                hide-details
+                hide-details="auto"
+                :error-messages="deviceError"
                 variant="outlined"
               />
             </div>
@@ -181,7 +182,8 @@
               <v-text-field
                 v-model="heroParams.deviceId"
                 density="compact"
-                hide-details
+                hide-details="auto"
+                :error-messages="deviceError"
                 variant="outlined"
               />
             </div>
@@ -387,6 +389,8 @@ const heroParams = reactive({
   apiToken: "",
 });
 
+const deviceError = ref("");
+
 const videoSrc = ref(
   `https://superhero.mobileinnovation.asia/vss/apiPage/${showMode.value}.html?token=${heroParams.apiToken}&deviceId=${heroParams.deviceId}&chs=${heroParams.chs}&stream=0&wnum=1&panel=1&buffer=2000`,
 );
@@ -512,6 +516,13 @@ watch(
 );
 
 watch(
+  () => heroParams.deviceId,
+  () => {
+    deviceError.value = "";
+  },
+);
+
+watch(
   () => props.active,
   (active) => {
     if (active) updateUrl();
@@ -528,22 +539,29 @@ watch(
 );
 
 const fetchDeviceCameraInfo = async () => {
+  let res;
   try {
-    await getDeviceCameraInfo(fleetviewState.serial, fleetviewState.token)
-      .then(async (res) => {
-        if (res.success) {
-          heroParams.chs = res.data.VideoSystemId;
-          await fetchVideoSystemInfo(res.data.VideoSystemId);
-        } else {
-          console.error(res.error || "Failed to fetch device camera info");
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching device camera info:", error);
-      });
+    res = await getDeviceCameraInfo(fleetviewState.serial, fleetviewState.token);
   } catch (error) {
+    const message =
+      error.response?.data?.message || error.message || "Unknown error";
     console.error("Error fetching device camera info:", error);
+    deviceError.value = message;
+    return;
   }
+
+  if (!res?.success) {
+    const message = res?.error || res?.message || "Unknown error";
+    console.error("Failed to fetch device camera info:", message);
+    deviceError.value = message;
+    return;
+  }
+
+  deviceError.value = "";
+
+  heroParams.chs = res.data.VideoSystemId;
+  // fetchVideoSystemInfo shows its own alert on failure
+  await fetchVideoSystemInfo(res.data.VideoSystemId).catch(() => {});
 };
 
 // Refresh a bit early so the token doesn't expire mid-request
